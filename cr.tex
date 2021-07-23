@@ -1,0 +1,176 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{minted}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{automata,positioning}
+\begin{document}
+\title{Projet IN406 - Évaluation d’expressions booléennes}
+
+\author{BOUSSOUAR Feriel et MOUNGAD Massilia}
+\date{25 mai 2021}
+
+\newpage
+
+\maketitle
+\section*{Question 1 :}
+Lire une chaine de caractère contenant une expression arithmétique et la transformer en une liste de tokens. \\
+Nous avons créé et  stocké un token en utilisant  des enums, des struct et des fonctions suivantes:
+
+\begin{minted}{C}
+typedef enum { CONSTANTE, OPERATEUR, PARENTHESE } typeT;
+
+typedef enum
+{
+    FAUX = 0, VRAI = 1,
+    NON, ET, OU, IMPLICATION, EQUIVALENCE,
+    GAUCHE , DROITE
+}   valeurT;
+
+typedef struct token* liste_token;
+struct token
+{
+    typeT type;
+    valeurT val;
+    liste_token suiv;
+}; 
+\end{minted}
+\begin{itemize}
+    \item liste\_token allouer\_liste\_token(typeT type, valeurT val): permet d'allouer la mémoire à un token dans la liste.
+    \item void desallouer\_liste\_token(liste\_token liste): permet de libèrer la liste de tokens en mémoire.
+    \item liste\_token string\_to\_token(const char  *string): permet de transformer une chaîne de caractères en liste de token, elle teste à chaque itération le  caractère string de la  chaine pour lui attribuer un type et une valeur par exemple s'il est égale à 0 le type sera CONSTANTE de valeur v = FAUX afin de le stocker dans un token.
+\end{itemize}
+
+\section*{Question 2 :}
+Donner un automate à pile reconnaissant le langage dont les mots sont les expressions booléennes.
+\vspace{5px}
+
+Soit L le langage : \\
+$L = \{\; w\;g\acute{e}n\acute{e}r\acute{e}e\;par\;G,\; |w|_{(} = |w|_{)}\;\}$\\
+le nombre de parenthèses ouvrantes = le nombre de parenthèses fermantes 
+\vspace{5px}\\*
+
+Définition formelle : \\
+\vspace{5px}\\*
+\begin{math}
+    A = (\Sigma,\;Q,\;\Gamma,\;q_0,	\delta,\;F,\;T)\\
+	\Sigma =\{\;0,\;1,\;NON,\;+,\;.,\;\Rightarrow,\;\Leftrightarrow\;\}\\
+	Q = \{\;q_0,\;q_1\;\}\\
+    \Gamma = \{\;X\;\}\\
+    \delta \\
+    q0 = \{\;q0\;\}\\
+    F = \{\;q_1\;\}\\
+    T = \{ \\
+    \hspace*{7ex} (q_0,\;\delta,\;NON,\;\delta,\;q_0),\;(q_0,\;\delta,\;(,X,\;q_0\;), \\
+    \hspace*{7ex} (q_0,\;\delta,\;0,\;\delta,\;q_1\;),\;(q_0,\;\delta,\;1,\;\delta,\;q_1\;), \\
+    \hspace*{7ex} (q_1,\;\delta,\;+,\;\delta,\;q_0),\;(q_1,\;\delta,\;.,\;\delta,\;q_0), \\
+    \hspace*{7ex} (q_1,\;\delta,\;\Rightarrow,\;\delta,\;q_0),\;(q_1,\;\delta,\;\Leftrightarrow,\;\delta,\;q_0), \\
+    \hspace*{7ex} (q_1,\;X,\;),\;\epsilon,\;q_1), \\
+    \}
+\end{math}
+
+\begin{figure}[H]
+\begin{tikzpicture}
+   \node[state,initial] (q_0)  {$q_0$}; 
+   \node[state, accepting] (q_1) [right=4cm] {$q_1$}; 
+    \path[->] 
+    (q_0)   edge [loop below] node[below=0.0] {\delta,$NON,\delta$}
+                              node[below=0.7] {$(,\delta,X$} ()
+            edge [bend left=30] node[above=1] {X,$0,X$}
+                                node[above=0.5] {X,$1,X$} (q_1)
+    (q_1)   edge [loop above] node {X,$),\epsilon$} ()
+            edge [bend left=30] node[below=0.5] {X,$+,X$}
+                                node[below=1] {X,$.,X$}
+                                node[below=1.5] {X,$\Rightarrow,X$}
+                                node[below=2] {X,$\Leftrightarrow,X$} (q_0);
+\end{tikzpicture}
+\caption{Automate à pile reconnaissant le langage par état final et pile vide.}
+\end{figure} 
+\begin{itemize}
+    \item Si on lit une parenthese ouvrante  ( : on empile dans la pile  et on reste dans q0
+    \item Si on lit NON : on fait rien dans la pile et on reste dans  q0
+    \item Si on lit 0 ou 1 : on fait rien dans la pile et on va de q0 à q1
+    \item Si on lit une parenthese fermante ) : on depile et on reste dans q1
+    \item Si on lit + ou . ou  \begin{math} \Rightarrow \end{math}  ou \begin{math} \Leftrightarrow{} \end{math} :  on fait rien dans la pile et on va  de q1 à q0 
+\end{itemize}
+
+\section*{Question 3 :}
+
+La fonction qui teste si une liste de token appartient au langage ou non\\
+int expression\_appartient\_langage(liste\_token liste): elle prend en paramètre une liste et elle vérifie si l'expression est valide 
+
+
+\section*{Question 4:}
+
+Créer l'arbre représentant l'expression booléenne\\
+La strucutre pour stocker un arbre des tokens: 
+\begin{minted}{C}
+typedef struct arbre* arbre_token;
+struct arbre
+{
+    typeT type;
+    valeurT val;
+    arbre_token gauche;
+    arbre_token droite;
+};
+\end{minted}
+Struct arbre a deux  pointeurs de type struct arbre* pour le fils gauche 
+et le fils droit.\\
+Les fonction pour créer l'arbre qui représente l'expréssion booléene: \\
+\begin{itemize}
+    \item arbre\_token alloue\_arbre\_token(liste\_token liste): permet d'allouer la memoire à un token pour le stocker dans l'arbre
+    \item arbre\_token liste\_token\_to\_arbre\_token(liste\_token l): permet de transformer une liste de tokens en arbre 
+\end{itemize}
+
+\newpage
+\section*{Question 5 :}
+\vspace{5px}
+
+Calculer la valeur de l expression arithmétique et afficher le résultat \\
+\begin{itemize}
+ \item int calculer(valeurT x, valeurT y, valeurT op), nous avons fait dans cette 
+fonction un switch pour calculer et retourner une valeur  de a et b en fonction de 
+type de l opérateur.
+\end{itemize}
+\begin{minted}{C}
+ int calculer(valeurT x, valeurT y, valeurT op)
+{   
+	switch (op)
+	{ 
+	    case (NON) :
+	        return ! x;
+	    case (OU) :
+	        return x|y; 
+	    case (ET) :
+	        return x&y; 
+	    case (IMPLICATION) :
+	        return (! x) | y;
+	    case (EQUIVALENCE) :
+	        return ! x ^ y;
+	}
+} 
+\end{minted}
+
+\begin{itemize}
+    \item int arbre\_to\_int(arbre\_token arb): permet de calculer la valeur de l'expression booléenne stockée dans la liste des tokens dans l arbre en faisant un appel récursif de la fonction calculer pour calculer la valeur entre fils gauche et fils droit.
+\end{itemize}
+ 
+\begin{minted}{C}
+int arbre_to_int(arbre_token arb)
+{
+    if (! arb)   return 0;
+    else if (arb->type == CONSTANTE)
+        return at->valeur;
+    return calcule(arbre_to_int(at->gauche), arbre_to_int(arb->droite), arb->valeur);
+}
+\end{minted} 
+
+\newpage
+\section*{Commentaires Supplémentaires :}
+En plus de la fonction liste\_token liste\_token\_to\_arbre(liste\_token liste), nous avons
+développé la fonction liste\_token liste\_token\_postfixe(liste\_token liste) permettant de
+transformer la liste token en liste postfixe à l'aide d'une pile en utilisant les macros PUSH et POP pour empiler et dépiler dans la pile afin de pouvoir évaluer notre expression booléene.
+
+\end{document}
